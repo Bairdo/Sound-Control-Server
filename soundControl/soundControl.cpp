@@ -2,39 +2,99 @@
 //
 
 #include "stdafx.h"
-#include <endpointvolume.h>
-#include <iostream>
-#include <mmdeviceapi.h>
-#include <audiopolicy.h>
-#include <Audioclient.h>
-#include <Windows.h>
-#include <TlHelp32.h>
+/*
+#include "soundControl.h"
+#include "soundComponent.h"
+#include "entry.h"
+#include "server.h"
+
+#include <vector>
+*/
+//#define EXIT_ON_ERROR(hr)  \
+//if (FAILED(hr)) { std::cout << "error" << std::endl; exit(hr); }
+// todo
+// get list of all sound sessions
+// with each session get the volume might want to keep a reference of the control to change volume.
+
+/*
+int _tmain(int argc, TCHAR* argv[])
+{
+	// start new thread to wait for socket connection.
+
+	// get  master volume.
+	// get volume for each session. (group if needed).
+
+	initalise();
+
+	SoundComponent sc= SoundComponent(g_pEndptVol);
+
+	//initaliseSC(sc);
+
+	Server s = Server(sc);
+	s.run();
 
 
 
-#define EXIT_ON_ERROR(hr)  \
-if (FAILED(hr)) { std::cout<< "error" << std::endl; goto Exit; }
+
+	
+
+	//std::this_thread::sleep_for(std::chrono::milliseconds(30000));
+
+	std::wcout << L"Master vol: " << sc.getMasterVol() << std::endl;
+
+	float level;
+	sc.master->GetMasterVolumeLevelScalar(&level);
+	std::cout << sc.getMasterVolScalar() << std::endl;
 
 
-static IAudioEndpointVolume *g_pEndptVol = NULL;
-static IAudioClient * audioClient = NULL;
-static IAudioSessionManager * audioManager = NULL;
-static IAudioSessionManager2 * auMan2 = NULL;
+	//changeSessionVol(sc.sessions[2].volume, 0.5);
 
-bool printVolumeRange(IAudioEndpointVolume*);
-bool changeVolume(IAudioEndpointVolume * endPtVol);
-bool muteUnmute(IAudioEndpointVolume* endPtVol);
-bool printChanelVolumes(IAudioEndpointVolume* endPtVol);
-bool audioSessionManagerStuff(IAudioSessionManager * audioSessionManager);
-HRESULT EnumSessions(IAudioSessionManager2* pSessionManager);
+//	muteUnmuteSession(sc.sessions[2].volume);
+//	changeSessionVol(sc.sessions[2].volume, 0.4);
 
-//  Forward declarations:
-BOOL GetProcessName(DWORD & pid, WCHAR * retVal);
-BOOL ListProcessModules(DWORD dwPID);
-BOOL ListProcessThreads(DWORD dwOwnerPID);
-void printError(TCHAR* msg);
 
-int _tmain(int argc, _TCHAR* argv[])
+
+
+	for (Entry e : sc.sessions){
+		std::wcout << e.name << " pid: " << e.pid << " vol: " << e.getMasterVolume() << std::endl;
+		s.sendName(e.name, wcslen(e.name));
+	}
+
+
+	s.exit();
+	int waitval = 0;
+//	while waitval 
+	std::cin >> waitval;
+	return 0;
+}
+*/
+
+/*
+ * sends audio sessions to client
+ */
+void sendSessions(){
+	// send the session info to the client: name, current vol, current mute, picture
+
+}
+
+void sendSessionsListUpdate(){
+	// send update when new program is added,
+}
+
+void sendSessionUpdate(){
+	// update to a single (at a time) session, i.e. windows muted/changed vol.
+}
+
+/*
+* updates session with new settings from client
+*/
+void receiveSettings(){
+	// make the change to windows
+	// send the change back (i.e. currently -1 if error on updating e.t.c)
+
+}
+/*
+int _tmain2(int argc, _TCHAR* argv[])
 {
 	
 	std::cout << "hi" << std::endl;
@@ -74,18 +134,28 @@ int _tmain(int argc, _TCHAR* argv[])
 	EXIT_ON_ERROR(hr)
 
 
-		//GetProcessList();
-	if (FAILED(EnumSessions(auMan2))){
-		std::cout << "error" << std::endl;
-		goto Exit;
+
+	for (int i = 0; i < 40; i++){
+		if (FAILED(EnumSessions(auMan2, audioClient))){
+			std::cout << "error" << std::endl;
+			goto Exit;
+		}
+		std::cout << std::endl;
+
+		Sleep(2000);
+
 	}
+
+
+		//GetProcessList();
+
 
 
 Exit:
 	std::cin >> in; 
 	return 0;
-}
-
+}*/
+/*
 bool audioSessionManagerStuff(IAudioSessionManager * audioSessionManager){
 	HRESULT hr;
 	DWORD flags = 0;
@@ -107,9 +177,9 @@ bool audioSessionManagerStuff(IAudioSessionManager * audioSessionManager){
 	std::wcout << ret << std::endl;
 	CoTaskMemFree(ret);
 	return true;
-}
-
-HRESULT EnumSessions(IAudioSessionManager2* pSessionManager)
+}*/
+/*
+HRESULT EnumSessions(IAudioSessionManager2* pSessionManager, IAudioClient * audioClient)
 {
 	if (!pSessionManager)
 	{
@@ -132,9 +202,9 @@ HRESULT EnumSessions(IAudioSessionManager2* pSessionManager)
 	FAILED(hr = pSessionList->GetCount(&cbSessionCount));
 
 
+	
 
-
-
+	
 
 
 	for (int index = 0; index < cbSessionCount; index++)
@@ -169,9 +239,36 @@ HRESULT EnumSessions(IAudioSessionManager2* pSessionManager)
 			std::cout << wcslen(ret);
 			wprintf_s(L"Session Name: %s\n", ret);
 		}
+
+		ISimpleAudioVolume * audioVolume = NULL;
+
+
+		LPCGUID * audioGuid = NULL;
+
+		ISimpleAudioVolume * simpleAudioVol = NULL; 
+
+		//audioClient->GetService(__uuidof(ISimpleAudioVolume), (void **) & simpleAudioVol);
+
+	/ *	IAudioEndpointVolume * ev = NULL; 
+		pSessionControl->QueryInterface(__uuidof(IAudioEndpointVolume), (void **)& ev);
+		float level = 0;
+
+		if (ev == NULL) std::cout << "ev was null" << std::endl;
+		ev->GetMasterVolumeLevel(&level);
+		* /
+		
+		pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void **)& simpleAudioVol);
+
+		float level = 0;
+		simpleAudioVol->GetMasterVolume(&level);
+		
+
+		std::cout << level << std::endl;
+		//simpleAudioVol->
+
+	//	pSessionManager->GetSimpleAudioVolume(audioGuid, FALSE, (void **)& audioVolume);
 	}
 
-done:
 //	CoTaskMemFree(pswSession);
 //	SAFE_RELEASE(pSessionControl);
 //	SAFE_RELEASE(pSessionList);
@@ -181,145 +278,10 @@ done:
 }
 
 
-
-bool muteUnmute(IAudioEndpointVolume* endPtVol){
-	BOOL mute;
-	HRESULT hr;
-	hr = g_pEndptVol->GetMute(&mute);
-	if (FAILED(hr)) return false;
-	hr = g_pEndptVol->SetMute(!mute, NULL);
-	if (FAILED(hr)) return false;
-	std::cout << "mute set: " << mute << std::endl;
-}
-
-bool changeVolume(IAudioEndpointVolume * endPtVol){
-	HRESULT hr;
-
-	int steps;
-	std::cin >> steps;
-	if (steps < 0){
-		for (int i = steps; i < 0; i++){
-			hr = endPtVol->VolumeStepDown(NULL);
-			if (FAILED(hr)) return false;
-
-		}
-	}
-	else{
-		for (int i = 0; i < steps; i++){
-			hr = endPtVol->VolumeStepUp(NULL);
-			if (FAILED(hr)) return false;
-
-		}
-	}
-	std::cout << "changed vol by: " << steps << " steps." << std::endl;
-}
-
-
-
-/*
- * returns false on failure.
 */
-bool printVolumeRange(IAudioEndpointVolume * endPtVol){
-	float  min = 0;
-	float max = 0;
-	float inc = 0;
-	HRESULT hr;
-	hr = g_pEndptVol->GetVolumeRange(&min, &max, &inc);
-	if (FAILED(hr)) return false;
-
-	std::cout << "Min db: " << min << " Max db: " << max << " increment db: " << inc << std::endl;
-	return true;
-}
-
-
-bool printChanelVolumes(IAudioEndpointVolume* endPtVol){
-	HRESULT hr;
-
-	UINT channelCount = 0;
-
-	hr = endPtVol->GetChannelCount(&channelCount);
-	if (FAILED(hr)){
-		return false;
-	}
-	std::cout << "Channel Count: " << channelCount << std::endl;
-
-	for (UINT i = 0; i < channelCount; i++){
-		float level = 0;
-		hr = endPtVol->GetChannelVolumeLevel(i, &level);
-		if (FAILED(hr)){
-			return false;
-		}
-		std::cout << "Channel: " << i << " db: " << level << std::endl;
-	}
-	return true;
-}
 
 
 /*
- * retName the returned name of the process.
- */
-BOOL GetProcessName(DWORD& pid, WCHAR * retName)
-{
-	HANDLE hProcessSnap;
-	HANDLE hProcess;
-	PROCESSENTRY32 pe32;
-	DWORD dwPriorityClass;
-
-	// Take a snapshot of all processes in the system.
-	hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	if (hProcessSnap == INVALID_HANDLE_VALUE)
-	{
-		printError(TEXT("CreateToolhelp32Snapshot (of processes)"));
-		return(FALSE);
-	}
-
-	// Set the size of the structure before using it.
-	pe32.dwSize = sizeof(PROCESSENTRY32);
-
-	// Retrieve information about the first process,
-	// and exit if unsuccessful
-	if (!Process32First(hProcessSnap, &pe32))
-	{
-		printError(TEXT("Process32First")); // show cause of failure
-		CloseHandle(hProcessSnap);          // clean the snapshot object
-		return(FALSE);
-	}
-
-	// Now walk the snapshot of processes, and
-	// display information about each process in turn
-	do
-	{
-		dwPriorityClass = 0;
-		hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe32.th32ProcessID);
-		if (hProcess == NULL){}
-		//	printError(TEXT("OpenProcess"));
-		else
-		{
-			dwPriorityClass = GetPriorityClass(hProcess);
-			if (!dwPriorityClass)
-				printError(TEXT("GetPriorityClass"));
-			CloseHandle(hProcess);
-		}
-
-		//std::cout << pe32.th32ProcessID << " " << pid << std::endl;
-
-		if (pe32.th32ProcessID == pid){
-			//_tprintf(TEXT("\n\n====================================================="));
-		//	_tprintf(TEXT("\nPROCESS NAME:  %s"), pe32.szExeFile);
-			//_tprintf(TEXT("\n-------------------------------------------------------"));
-
-			//_tprintf(TEXT("\n  Process ID        = 0x%08X"), pe32.th32ProcessID);
-			//wcsncpy_s(retName, pe32.szExeFile, 260);
-			wcsncpy_s(retName, 260, pe32.szExeFile, 260);
-			break;
-		}
-	} while (Process32Next(hProcessSnap, &pe32));
-
-	CloseHandle(hProcessSnap);
-	return(TRUE);
-}
-
-
 BOOL ListProcessModules(DWORD dwPID)
 {
 	HANDLE hModuleSnap = INVALID_HANDLE_VALUE;
@@ -401,27 +363,4 @@ BOOL ListProcessThreads(DWORD dwOwnerPID)
 
 	CloseHandle(hThreadSnap);
 	return(TRUE);
-}
-
-void printError(TCHAR* msg)
-{
-	DWORD eNum;
-	TCHAR sysMsg[256];
-	TCHAR* p;
-
-	eNum = GetLastError();
-	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL, eNum,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-		sysMsg, 256, NULL);
-
-	// Trim the end of the line and terminate it with a null
-	p = sysMsg;
-	while ((*p > 31) || (*p == 9))
-		++p;
-	do { *p-- = 0; } while ((p >= sysMsg) &&
-		((*p == '.') || (*p < 33)));
-
-	// Display the message
-	_tprintf(TEXT("\n  WARNING: %s failed with error %d (%s)"), msg, eNum, sysMsg);
-}
+}*/
