@@ -24,22 +24,27 @@ private:
 	IAudioSessionManager2 * auMan2 = NULL;
 
 	void initalise();
-	void getEntrys(std::vector<Entry>& list);
+	void getEntrys(std::vector<AudioSession>& list);
 	BOOL GetProcessName(DWORD& pid, WCHAR * retName);
 
 public:
 	// Fields
 	IAudioEndpointVolume * master = NULL;
-	std::vector<Entry> sessions;
+	std::vector<AudioSession> sessions;
 
 	// constructors
 	SoundComponent(Server * s);
-	
+	SoundComponent();
 
 	// MEthods
 	float getMasterVol();
 	float getMasterVolScalar();
 
+	float setMasterVol(float vol);
+
+	AudioSession* getAudioSession(int pid);
+
 	void sendNames();
-	
+	void sendStatus(); 
+	void sendUpdate();
 };

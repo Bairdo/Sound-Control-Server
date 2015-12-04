@@ -7,9 +7,16 @@
 #define PRINT_ON_ERROR(hr) \
 if (FAILED(hr)) { std::cout << "error: " << hr << std::endl; return; }
 
+
+SoundComponent::SoundComponent(){
+	initalise();
+	sessions = std::vector<AudioSession>();
+	getEntrys(sessions);
+}
+
 SoundComponent::SoundComponent(Server * s) : server(s){
 	initalise();
-	sessions = std::vector<Entry>();
+	sessions = std::vector<AudioSession>();
 	getEntrys(sessions);
 }
 
@@ -50,7 +57,7 @@ void SoundComponent::initalise(){
 }
 
 
-void SoundComponent::getEntrys(std::vector<Entry>& list){
+void SoundComponent::getEntrys(std::vector<AudioSession>& list){
 
 
 	ISimpleAudioVolume *simpleVol = NULL;
@@ -91,9 +98,12 @@ void SoundComponent::getEntrys(std::vector<Entry>& list){
 		}
 
 
-		WCHAR * name = new WCHAR[MAX_NAME_LENGTH];
-		GetProcessName(pswSession, name);
-		LPWSTR ret = NULL;
+		WCHAR * name = new WCHAR[MAX_NAME_LENGTH]();
+		BOOL result = GetProcessName(pswSession, name);
+		if (!result){
+			continue;
+		}
+		//LPWSTR ret = NULL;
 		/*	hr = pSessionControl->GetDisplayName(&ret);
 		if (FAILED(hr)){
 		std::cout << "error" << std::endl;
@@ -106,9 +116,11 @@ void SoundComponent::getEntrys(std::vector<Entry>& list){
 
 		}*/
 
-		pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void **)& simpleVol);
+		HRESULT ret = pSessionControl->QueryInterface(__uuidof(ISimpleAudioVolume), (void **)& simpleVol);
 
-
+		if (FAILED(hr)){
+			continue;
+		}
 		list.emplace_back(simpleVol, pswSession, name);
 	}
 }
@@ -177,11 +189,16 @@ BOOL SoundComponent::GetProcessName(DWORD& pid, WCHAR * retName)
 	return(TRUE);
 }
 
-
+float SoundComponent::setMasterVol(float vol){
+	float level = 0;
+	HRESULT hr = master->SetMasterVolumeLevel(vol, NULL);
+	if (FAILED(hr)) return -1;
+	return level;
+}
 
 float SoundComponent::getMasterVol(){
 	float level = 0;
-	HRESULT hr = master->GetMasterVolumeLevel(&level);
+	HRESULT hr = master->GetMasterVolumeLevelScalar(&level);
 	if (FAILED(hr)) return -1;
 	return level;
 }
@@ -220,11 +237,37 @@ void printError(TCHAR* msg)
 
 void SoundComponent::sendNames(){
 	std::cout << "sending all names" << std::endl;
-	for (Entry & e : sessions){		
-		server->sendName(e.name, wcslen(e.name));
+	for (AudioSession & as : sessions){
+		server->sendName(as.name, wcslen(as.name));
+	}
+}
 
+void SoundComponent::sendStatus(){
+	std::cout << "sending status of all sound stuff (vols, names)" << std::endl;
+	
+	for (AudioSession & as : sessions){
+		server->sendName(as.name, wcslen(as.name));
+		server->sendVol(as.getMasterVolume());
 	}
 
-	
-	
+}
+
+void SoundComponent::sendUpdate(){
+
+	std::cout << "sending all." << std::endl;
+
+	for (AudioSession & as : sessions){
+		float vol = -1;
+		HRESULT hr = as.volume->GetMasterVolume(&vol);
+		server->sendUpdate(as.pid, vol, as.name);
+	}
+}
+
+AudioSession* SoundComponent::getAudioSession(int pid){
+	for (auto& as : sessions){
+		if (as.pid == pid){
+			return &as;
+		}
+	}
+	return NULL;
 }

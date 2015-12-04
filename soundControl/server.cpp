@@ -8,7 +8,7 @@
 
 
 namespace {
-	static const PCSTR DEFAULT_PORT = "27015";
+	const PCSTR DEFAULT_PORT = "27015";
 }
 
 
@@ -49,7 +49,7 @@ Server::Server() {
 		ZeroMemory(&hints, sizeof (hints));
 		hints.ai_family = AF_INET;
 		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_protocol = IPPROTO_TCP;
+		hints.ai_protocol = IPPROTO_UDP;
 		hints.ai_flags = AI_PASSIVE;
 
 		// Resolve the local address and port to be used by the server
@@ -75,7 +75,7 @@ Server::Server() {
 
 	int Server::bindSocket(SOCKET& ListenSocket){
 
-		// Setup the TCP listening socket
+		/*// Setup the TCP listening socket
 		int iResult = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
 		if (iResult == SOCKET_ERROR) {
 			printf("bind failed with error: %d\n", WSAGetLastError());
@@ -86,6 +86,17 @@ Server::Server() {
 		}
 
 		freeaddrinfo(result);
+		*/
+		/*
+		sockaddr_in add;
+		add.sin_family = AF_INET;
+		add.sin_addr.s_addr = htonl(INADDR_ANY);
+		add.sin_port = htons(port);
+
+		int ret = bind(sock, reinterpret_cast<SOCKADDR *>(&add), sizeof(add));
+		if (ret < 0)
+			throw std::system_error(WSAGetLastError(), std::system_category(), "Bind failed");
+			*/
 		return 0;
 	}
 
@@ -100,26 +111,35 @@ Server::Server() {
 		return 0;
 	}
 
-	int Server::acceptConnection(SOCKET & ListenSocket, SOCKET & ClientSocket){
+	int Server::acceptConnection(SOCKET & ClientSocket){
 		// Accept a client socket
 		ClientSocket = accept(ListenSocket, NULL, NULL);
 		if (ClientSocket == INVALID_SOCKET) {
 			printf("accept failed: %d\n", WSAGetLastError());
-			closesocket(ListenSocket);
-			WSACleanup();
+			
 			return 0;
 		}
 		return 1;
 	}
 
 
-	void Server::getConnections(SOCKET& ListenSocket ){
+	void Server::getConnections(){
 		SOCKET ClientSocket = INVALID_SOCKET;
-		while (acceptConnection(ListenSocket, ClientSocket)){
-			std::cout << "Accepted connection" << std::endl;
-			connections.emplace_back(ClientSocket);
-			sc->sendNames();
+		while (true){
+			while (acceptConnection(ClientSocket)){
+				std::cout << "Accepted connection" << std::endl;
+				connections.emplace_back(ClientSocket);
+				//sc->sendNames();
+				sc->sendUpdate();
+				ClientSocket = INVALID_SOCKET;
+			}
+			closesocket(ListenSocket);
+			ListenSocket = INVALID_SOCKET;
+			result = NULL;
+			createSocket(ListenSocket);
+			bindSocket(ListenSocket);
 		}
+
 	}
 
 	
@@ -129,7 +149,7 @@ Server::Server() {
 		
 
 		struct addrinfo * result = NULL;
-		SOCKET ListenSocket = INVALID_SOCKET;
+		
 		
 		std::cout << "running" << std::endl;
 		intialiseWinSock();
@@ -141,7 +161,7 @@ Server::Server() {
 		listenSocket(ListenSocket);
 		std::cout << "accepting" << std::endl;
 		
-		t = std::thread(&Server::getConnections, this, ListenSocket);
+		t = std::thread(&Server::getConnections, this);
 
 		//std::cout << "receiving/sending" << std::endl;
 		//receiveSend(ClientSocket);
@@ -164,6 +184,9 @@ Server::Server() {
 			std::cout << "waiting for thread to be done" << std::endl;
 			connections[i].join();
 		}
+
+		closesocket(ListenSocket);
+		WSACleanup();
 		std::cout << "waiting for user to quit" << std::endl;
 	}
 
@@ -173,4 +196,20 @@ Server::Server() {
 			c.sendName(name, length);
 		}
 		return length;
+	}
+
+	void Server::sendVol(float vol){
+
+		for (Connection& c : connections){
+			c.sendVol(vol);
+		}
+	}
+
+	void Server::sendUpdate(long pid, float vol, WCHAR* name){
+
+
+		for (Connection& c : connections){
+			c.sendUpdate(pid, vol, name);
+		}
+
 	}

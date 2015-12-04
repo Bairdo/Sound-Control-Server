@@ -23,7 +23,7 @@ bool printChanelVolumes(IAudioEndpointVolume* endPtVol);
 //bool audioSessionManagerStuff(IAudioSessionManager * audioSessionManager);
 HRESULT EnumSessions(IAudioSessionManager2* pSessionManager, IAudioClient* audioClient);
 
-void getEntrys(std::vector<Entry>& list);
+void getEntrys(std::vector<AudioSession>& list);
 
 //  Forward declarations:
 BOOL GetProcessName(DWORD & pid, WCHAR * retVal);

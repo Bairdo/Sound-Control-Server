@@ -14,7 +14,7 @@ private:
 	SOCKET s;
 
 	std::thread * rec = NULL;
-	// because connection is creeated on a thread, it handles send.
+	// because connection is created on a thread, it handles send.
 
 	void run();
 
@@ -27,8 +27,10 @@ public:
 	int disconnect();
 
 	int sendName(WCHAR * name, int length);
+	void sendVol(float vol);
 	void receive();
 
-	void sendData(WCHAR * name, int length);
+	void sendData(char * name, int length);
+	void sendUpdate(long pid, float vol, WCHAR* name);
 
 };

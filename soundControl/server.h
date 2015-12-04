@@ -31,6 +31,7 @@ private:
 	std::thread t;
 
 
+	SOCKET ListenSocket = INVALID_SOCKET;
 	
 	/*
 	
@@ -54,7 +55,7 @@ public:
 	int createSocket(SOCKET & ListenSocket);
 	int bindSocket(SOCKET& ListenSocket);
 	int listenSocket(SOCKET &ListenSocket);
-	int acceptConnection(SOCKET & ListenSocket, SOCKET & ClientSocket);
+	int acceptConnection(SOCKET & ClientSocket);
 
 	int sendName(WCHAR* name, int length);
 
@@ -62,5 +63,8 @@ public:
 
 	void exit();
 
-	void getConnections(SOCKET& ListenSocket);
+	void getConnections();
+
+	void sendVol(float vol);
+	void sendUpdate(long pid, float vol, WCHAR* name);
 };

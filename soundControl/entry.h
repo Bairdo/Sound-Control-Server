@@ -11,14 +11,15 @@
 #include <TlHelp32.h>
 
 #include "general.h"
+#include <cstdint>
 
-struct Entry {
+struct AudioSession {
 	ISimpleAudioVolume * volume;
 	WCHAR * name;
 	DWORD pid;
 
 
 	float getMasterVolume();
-	Entry(ISimpleAudioVolume *v, DWORD pid, WCHAR n[MAX_NAME_LENGTH]);
+	AudioSession(ISimpleAudioVolume *v, DWORD pid, WCHAR n[MAX_NAME_LENGTH]);
 
 };
