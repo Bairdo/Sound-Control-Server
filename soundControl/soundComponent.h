@@ -44,7 +44,4 @@ public:
 
 	AudioSession* getAudioSession(int pid);
 
-	void sendNames();
-	void sendStatus(); 
-	void sendUpdate();
 };

@@ -1,8 +1,7 @@
 #include "stdafx.h"
 #include "soundComponent.h"
-#include "soundControl.h"
 
-#include "server.h"
+
 
 #define PRINT_ON_ERROR(hr) \
 if (FAILED(hr)) { std::cout << "error: " << hr << std::endl; return; }
@@ -20,7 +19,6 @@ SoundComponent::SoundComponent(Server * s) : server(s){
 	getEntrys(sessions);
 }
 
-//SoundComponent::SoundComponent(){}
 
 void SoundComponent::initalise(){
 	CoInitialize(NULL);
@@ -233,34 +231,6 @@ void printError(TCHAR* msg)
 
 	// Display the message
 	_tprintf(TEXT("\n  WARNING: %s failed with error %d (%s)"), msg, eNum, sysMsg);
-}
-
-void SoundComponent::sendNames(){
-	std::cout << "sending all names" << std::endl;
-	for (AudioSession & as : sessions){
-		server->sendName(as.name, wcslen(as.name));
-	}
-}
-
-void SoundComponent::sendStatus(){
-	std::cout << "sending status of all sound stuff (vols, names)" << std::endl;
-	
-	for (AudioSession & as : sessions){
-		server->sendName(as.name, wcslen(as.name));
-		server->sendVol(as.getMasterVolume());
-	}
-
-}
-
-void SoundComponent::sendUpdate(){
-
-	std::cout << "sending all." << std::endl;
-
-	for (AudioSession & as : sessions){
-		float vol = -1;
-		HRESULT hr = as.volume->GetMasterVolume(&vol);
-		server->sendUpdate(as.pid, vol, as.name);
-	}
 }
 
 AudioSession* SoundComponent::getAudioSession(int pid){

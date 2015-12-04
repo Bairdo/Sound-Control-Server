@@ -24,6 +24,7 @@ Silver Moon ( m00n.silv3r@gmail.com )
 
 #define SPEAKER_PID 999999
 
+
 void processData(SoundComponent& soundComponent, char* buf, SOCKET& socket, int recv_len, struct sockaddr_in& si_other, int slen){
 	if (strncmp(buf, "Hello", 5)==0){
 		printf("message hello");
@@ -110,9 +111,7 @@ void processData(SoundComponent& soundComponent, char* buf, SOCKET& socket, int 
 
 int main()
 {
-
 	SoundComponent soundComponent;
-
 
 	SOCKET s;
 	struct sockaddr_in server, si_other;

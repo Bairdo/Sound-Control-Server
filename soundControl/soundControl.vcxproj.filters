@@ -24,9 +24,6 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="server.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="connection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -39,24 +36,18 @@
     <ClInclude Include="general.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="soundControl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SoundFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="blockingQueue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CAudioSessionsEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="soundControl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="connection.cpp">
@@ -69,9 +60,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="soundFunctions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UDPServer.cpp">
