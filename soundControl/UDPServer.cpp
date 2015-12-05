@@ -15,6 +15,9 @@ Silver Moon ( m00n.silv3r@gmail.com )
 
 #include <cstdint>
 
+#include <vector>
+
+
 #include "soundComponent.h"
 
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
@@ -24,44 +27,68 @@ Silver Moon ( m00n.silv3r@gmail.com )
 
 #define SPEAKER_PID 999999
 
+// get rid of this shit. and pretend it never happened.
+//std::vector<sockaddr_in> clients;
+struct sockaddr_in si_other;
+int slen;
+SOCKET socket_;
 
-void processData(SoundComponent& soundComponent, char* buf, SOCKET& socket, int recv_len, struct sockaddr_in& si_other, int slen){
-	if (strncmp(buf, "Hello", 5)==0){
-		printf("message hello");
 
-		
+
+void sendReply(SoundComponent& soundComponent ){
+	printf("sending status");
+	char retbuf[1000];
+	DWORD pid = SPEAKER_PID;
+	memcpy_s(&retbuf[0], 6, "Status", 6);
+	memcpy_s(&retbuf[6], 4, (char*)&pid, 4);
+	int v = soundComponent.getMasterVol() * 100; // this is in decibels.
+	memcpy_s(&retbuf[10], 4, (char*)&v, 4);
+	WCHAR * name = L"Speakers";
+	int length = wcslen(name) * 2;
+	memcpy_s(&retbuf[14], 500, (char*)&length, 4);
+	memcpy_s(&retbuf[18], 500, name, wcslen(name) * 2);
+
+	BOOL muted = soundComponent.getMasterMuted();
+
+	memcpy_s(&retbuf[18 + wcslen(name) * 2], 1, &muted, 1);
+
+	if (sendto(socket_, retbuf, 18 + length + 1, 0, (struct sockaddr*) &si_other, slen) == SOCKET_ERROR)
+	{
+		printf("sendto() failed with error code : %d", WSAGetLastError());
+		exit(EXIT_FAILURE);
+	}
+	for (auto& s : soundComponent.sessions){
 		char retbuf[1000];
-		DWORD pid = SPEAKER_PID;
+		DWORD pid = s.pid;
 		memcpy_s(&retbuf[0], 6, "Status", 6);
 		memcpy_s(&retbuf[6], 4, (char*)&pid, 4);
-		int v = soundComponent.getMasterVol()*100; // this is in decibels.
+		int v = s.getMasterVolume() * 100;
 		memcpy_s(&retbuf[10], 4, (char*)&v, 4);
-		WCHAR * name = L"Speakers";
+		WCHAR * name = s.name;
 		int length = wcslen(name) * 2;
 		memcpy_s(&retbuf[14], 500, (char*)&length, 4);
 		memcpy_s(&retbuf[18], 500, name, wcslen(name) * 2);
-		if (sendto(socket, retbuf, 18 + length, 0, (struct sockaddr*) &si_other, slen) == SOCKET_ERROR)
+
+		BOOL muted;
+		s.volume->GetMute(&muted);
+
+		memcpy_s(&retbuf[18 + wcslen(name) * 2], 1, &muted, 1);
+
+		if (sendto(socket_, retbuf, 18 + length + 1, 0, (struct sockaddr*) &si_other, slen) == SOCKET_ERROR)
 		{
 			printf("sendto() failed with error code : %d", WSAGetLastError());
 			exit(EXIT_FAILURE);
 		}
-		for (auto& s : soundComponent.sessions){
-			char retbuf[1000];
-			DWORD pid = s.pid;
-			memcpy_s(&retbuf[0], 6, "Status", 6);
-			memcpy_s(&retbuf[6], 4, (char*)&pid, 4);
-			int v = s.getMasterVolume()*100;
-			memcpy_s(&retbuf[10], 4, (char*)&v, 4);
-			WCHAR * name = s.name;
-			int length = wcslen(name) * 2;
-			memcpy_s(&retbuf[14], 500, (char*)&length, 4);
-			memcpy_s(&retbuf[18], 500, name, wcslen(name)*2);
-			if (sendto(socket, retbuf, 18+length, 0, (struct sockaddr*) &si_other, slen) == SOCKET_ERROR)
-			{
-				printf("sendto() failed with error code : %d", WSAGetLastError());
-				exit(EXIT_FAILURE);
-			}
-		}
+	}
+
+}
+
+void processData(SoundComponent& soundComponent, char* buf, int recv_len, LPCGUID guid){
+	if (strncmp(buf, "Hello", 5)==0){
+		printf("message hello");
+
+		
+		sendReply(soundComponent);
 		
 	}
 	else if (strncmp(buf, "Update", 5) == 0) {
@@ -86,7 +113,7 @@ void processData(SoundComponent& soundComponent, char* buf, SOCKET& socket, int 
 			
 			AudioSession* as = soundComponent.getAudioSession(pid);
 			if (as != NULL){
-				HRESULT res = as->volume->SetMasterVolume(static_cast<float>(vol)/100, NULL);// find out what the null should be.
+				HRESULT res = as->volume->SetMasterVolume(static_cast<float>(vol)/100, guid);// find out what the null should be.
 				if (res == S_OK){
 					std::cout << "success on changing volume: " << static_cast<float>(vol)/100 << std::endl;
 				}
@@ -99,7 +126,7 @@ void processData(SoundComponent& soundComponent, char* buf, SOCKET& socket, int 
 				}
 
 				//std::cout << "setting mute to: " << muted << std::endl;
-				as->volume->SetMute(static_cast<bool>(muted), NULL);
+				as->volume->SetMute(static_cast<bool>(muted), guid);
 			}
 		}
 	}
@@ -111,11 +138,24 @@ void processData(SoundComponent& soundComponent, char* buf, SOCKET& socket, int 
 
 int main()
 {
-	SoundComponent soundComponent;
+	
+	GUID guid;
+	HRESULT h = CoCreateGuid(&guid);
+	if (h != S_OK){
+		printf("dramas guid not created.");
+	}
+	else {
+		printf("guid is: %d", guid);
+	}
+	LPCGUID lpcguid = static_cast<LPCGUID>(&guid);
+
+	SoundComponent soundComponent(lpcguid);
+
+	//soundComponent.setLPCGUID(lpcguid);
 
 	SOCKET s;
-	struct sockaddr_in server, si_other;
-	int slen, recv_len;
+	struct sockaddr_in server;
+	int recv_len;
 	char buf[BUFLEN];
 	WSADATA wsa;
 
@@ -177,7 +217,8 @@ int main()
 		//print details of the client/peer and the data received
 		//printf("Received packet from %s:%d\n", out, ntohs(si_other.sin_port)); //inet_ntoa(si_other.sin_addr)
 		printf("Data: %s\n", buf);
-		processData(soundComponent, buf, s, recv_len, si_other, slen);
+		socket_ = s; // todo fix
+		processData(soundComponent, buf, recv_len, lpcguid);
 	}
 
 	closesocket(s);

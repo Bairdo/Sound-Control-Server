@@ -1,13 +1,14 @@
 #include "stdafx.h"
 #include "soundComponent.h"
 
-
+#include "CAudioSessionsEvent.h"
+#include "CAudioEndpointVolumeCallback.h"
 
 #define PRINT_ON_ERROR(hr) \
 if (FAILED(hr)) { std::cout << "error: " << hr << std::endl; return; }
 
 
-SoundComponent::SoundComponent(){
+SoundComponent::SoundComponent(LPCGUID lpcguid): lpcguid(lpcguid){
 	initalise();
 	sessions = std::vector<AudioSession>();
 	getEntrys(sessions);
@@ -42,6 +43,9 @@ void SoundComponent::initalise(){
 		CLSCTX_ALL, NULL, (void**)&master);
 	PRINT_ON_ERROR(hr)
 
+		IAudioEndpointVolumeCallback * audioEndpopointCallback = new CAudioEndpointVolumeCallback(*lpcguid,*this);
+
+	master->RegisterControlChangeNotify(audioEndpopointCallback);
 
 		hr = pDevice->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL, (void **)&audioClient);
 	PRINT_ON_ERROR(hr)
@@ -82,7 +86,9 @@ void SoundComponent::getEntrys(std::vector<AudioSession>& list){
 	// Get the session count.
 	FAILED(hr = pSessionList->GetCount(&cbSessionCount));
 
+	IAudioSessionEvents* newNotifications = new CAudioSessionEvents(lpcguid, *this);
 
+	//
 
 
 	for (int index = 0; index < cbSessionCount; index++)
@@ -90,6 +96,8 @@ void SoundComponent::getEntrys(std::vector<AudioSession>& list){
 		FAILED(hr = pSessionList->GetSession(index, &pSessionControl));
 		FAILED(hr = pSessionControl->QueryInterface(
 			__uuidof(IAudioSessionControl2), (void**)&pSessionControl2));
+
+		hr = pSessionControl->RegisterAudioSessionNotification(newNotifications);
 
 		if (FAILED(hr = pSessionControl2->GetProcessId(&pswSession))){
 			continue;
@@ -189,7 +197,7 @@ BOOL SoundComponent::GetProcessName(DWORD& pid, WCHAR * retName)
 
 float SoundComponent::setMasterVol(float vol){
 	float level = 0;
-	HRESULT hr = master->SetMasterVolumeLevel(vol, NULL);
+	HRESULT hr = master->SetMasterVolumeLevel(vol, lpcguid);
 	if (FAILED(hr)) return -1;
 	return level;
 }
@@ -208,7 +216,12 @@ float SoundComponent::getMasterVolScalar(){
 	return level;
 }
 
-
+BOOL SoundComponent::getMasterMuted(){
+	BOOL muted = 0;
+	HRESULT hr = master->GetMute(&muted);
+	if (FAILED(hr)) return -1;
+	return muted;
+}
 
 void printError(TCHAR* msg)
 {
@@ -240,4 +253,8 @@ AudioSession* SoundComponent::getAudioSession(int pid){
 		}
 	}
 	return NULL;
+}
+
+void SoundComponent::setLPCGUID(LPCGUID guid){
+	lpcguid = guid;
 }

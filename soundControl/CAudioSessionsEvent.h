@@ -5,13 +5,19 @@
 // WASAPI calls these methods to notify the application when
 // a parameter or property of the audio session changes.
 //-----------------------------------------------------------
+
+
+extern void sendReply(SoundComponent& soundComponent);
+
 class CAudioSessionEvents : public IAudioSessionEvents
 {
 	LONG _cRef;
+	LPCGUID _lpcguid;
+	SoundComponent& soundComponent;
 
 public:
-	CAudioSessionEvents() :
-		_cRef(1)
+	CAudioSessionEvents(LPCGUID lpcguid, SoundComponent& soundComponent) :
+		_cRef(1), _lpcguid(lpcguid), soundComponent(soundComponent)
 	{
 	}
 
@@ -64,6 +70,13 @@ public:
 		LPCWSTR NewDisplayName,
 		LPCGUID EventContext)
 	{
+		if (IsEqualGUID(*EventContext, *_lpcguid)){
+			printf("OnDisplayNameChanged by self.\n");
+		}
+		else {
+			printf("OnDisplayNameChanged\n");
+			sendReply(soundComponent);
+		}
 		return S_OK;
 	}
 
@@ -71,6 +84,13 @@ public:
 		LPCWSTR NewIconPath,
 		LPCGUID EventContext)
 	{
+		if (IsEqualGUID(*EventContext, *_lpcguid)){
+			printf("OnIconPathChanged by self.\n");
+		}
+		else {
+			printf("OnIconPathChanged\n");
+			sendReply(soundComponent);
+		}
 		return S_OK;
 	}
 
@@ -79,6 +99,14 @@ public:
 		BOOL NewMute,
 		LPCGUID EventContext)
 	{
+		if (IsEqualGUID(*EventContext, *_lpcguid)){
+			printf("OnSimpleVolumeChanged by self.\n");
+		}
+		else {
+			printf("OnSimpleVolumeChanged\n");
+			sendReply(soundComponent);
+		}
+
 		if (NewMute)
 		{
 			printf("MUTE\n");
@@ -88,7 +116,7 @@ public:
 			printf("Volume = %d percent\n",
 				(UINT32)(100 * NewVolume + 0.5));
 		}
-
+		
 		return S_OK;
 	}
 
@@ -98,6 +126,14 @@ public:
 		DWORD ChangedChannel,
 		LPCGUID EventContext)
 	{
+		if (IsEqualGUID(*EventContext, *_lpcguid)){
+			printf("OnChannelVolumeChanged by self.\n");
+		}
+		else {
+			printf("OnChannelVolumeChanged\n");
+			sendReply(soundComponent);
+		}
+	
 		return S_OK;
 	}
 
@@ -105,6 +141,14 @@ public:
 		LPCGUID NewGroupingParam,
 		LPCGUID EventContext)
 	{
+		if (IsEqualGUID(*EventContext, *_lpcguid)){
+			printf("ongroupParamChanged by self.\n");
+		}
+		else {
+			printf("ongroupParamChanged\n");
+			sendReply(soundComponent);
+		}
+		
 		return S_OK;
 	}
 
@@ -123,7 +167,7 @@ public:
 			break;
 		}
 		printf("New session state = %s\n", pszState);
-
+		
 		return S_OK;
 	}
 
@@ -159,3 +203,4 @@ public:
 		return S_OK;
 	}
 };
+

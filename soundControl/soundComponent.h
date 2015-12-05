@@ -23,6 +23,8 @@ private:
 	IAudioSessionManager * audioManager = NULL;
 	IAudioSessionManager2 * auMan2 = NULL;
 
+	LPCGUID lpcguid;
+
 	void initalise();
 	void getEntrys(std::vector<AudioSession>& list);
 	BOOL GetProcessName(DWORD& pid, WCHAR * retName);
@@ -34,7 +36,7 @@ public:
 
 	// constructors
 	SoundComponent(Server * s);
-	SoundComponent();
+	SoundComponent(LPCGUID lpcguid);
 
 	// MEthods
 	float getMasterVol();
@@ -42,6 +44,10 @@ public:
 
 	float setMasterVol(float vol);
 
+	BOOL getMasterMuted();
+
 	AudioSession* getAudioSession(int pid);
+
+	void setLPCGUID(LPCGUID);
 
 };
