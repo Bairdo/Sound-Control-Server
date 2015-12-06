@@ -9,6 +9,9 @@ if (FAILED(hr)) { std::cout << "error: " << hr << std::endl; return; }
 
 
 SoundComponent::SoundComponent(LPCGUID lpcguid): lpcguid(lpcguid){
+
+	newNotifications = new CAudioSessionEvents(lpcguid, *this);
+	audioEndpopointCallback = new CAudioEndpointVolumeCallback(*lpcguid, *this);
 	initalise();
 	sessions = std::vector<AudioSession>();
 	getEntrys(sessions);
@@ -43,7 +46,7 @@ void SoundComponent::initalise(){
 		CLSCTX_ALL, NULL, (void**)&master);
 	PRINT_ON_ERROR(hr)
 
-		IAudioEndpointVolumeCallback * audioEndpopointCallback = new CAudioEndpointVolumeCallback(*lpcguid,*this);
+		
 
 	master->RegisterControlChangeNotify(audioEndpopointCallback);
 
@@ -58,6 +61,15 @@ void SoundComponent::initalise(){
 
 }
 
+
+void SoundComponent::updateEntrys(){
+	std::vector<AudioSession> list;
+//HRESULT hr = CoInitialize(NULL);
+	//PRINT_ON_ERROR(hr)
+	//getEntrys(list);
+	//sessions = list;
+	
+}
 
 void SoundComponent::getEntrys(std::vector<AudioSession>& list){
 
@@ -86,7 +98,7 @@ void SoundComponent::getEntrys(std::vector<AudioSession>& list){
 	// Get the session count.
 	FAILED(hr = pSessionList->GetCount(&cbSessionCount));
 
-	IAudioSessionEvents* newNotifications = new CAudioSessionEvents(lpcguid, *this);
+	
 
 	//
 
@@ -197,7 +209,7 @@ BOOL SoundComponent::GetProcessName(DWORD& pid, WCHAR * retName)
 
 float SoundComponent::setMasterVol(float vol){
 	float level = 0;
-	HRESULT hr = master->SetMasterVolumeLevel(vol, lpcguid);
+	HRESULT hr = master->SetMasterVolumeLevelScalar(vol, lpcguid);
 	if (FAILED(hr)) return -1;
 	return level;
 }
@@ -219,6 +231,12 @@ float SoundComponent::getMasterVolScalar(){
 BOOL SoundComponent::getMasterMuted(){
 	BOOL muted = 0;
 	HRESULT hr = master->GetMute(&muted);
+	if (FAILED(hr)) return -1;
+	return muted;
+}
+
+BOOL SoundComponent::setMasterMuted(BOOL muted){
+	HRESULT hr = master->SetMute(muted, lpcguid);
 	if (FAILED(hr)) return -1;
 	return muted;
 }
@@ -253,8 +271,4 @@ AudioSession* SoundComponent::getAudioSession(int pid){
 		}
 	}
 	return NULL;
-}
-
-void SoundComponent::setLPCGUID(LPCGUID guid){
-	lpcguid = guid;
 }

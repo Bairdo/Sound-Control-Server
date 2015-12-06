@@ -104,7 +104,14 @@ public:
 				TBM_SETPOS, TRUE,
 				LPARAM((UINT32)(MAX_VOL*pNotify->fMasterVolume + 0.5)));
 		}*/
-		sendReply(soundComponent);
+
+		if (IsEqualGUID(pNotify->guidEventContext, g_guidMyContext)){
+			printf("AudioEndpoint changed by self.\n");
+		}
+		else {
+			printf("AudioEndpoint changed.\n");
+			sendReply(soundComponent);
+		}
 		return S_OK;
 	}
 };

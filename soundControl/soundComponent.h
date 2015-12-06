@@ -25,29 +25,35 @@ private:
 
 	LPCGUID lpcguid;
 
+	IAudioSessionEvents* newNotifications;
+	IAudioEndpointVolumeCallback * audioEndpopointCallback;
+
 	void initalise();
 	void getEntrys(std::vector<AudioSession>& list);
 	BOOL GetProcessName(DWORD& pid, WCHAR * retName);
+
+	
 
 public:
 	// Fields
 	IAudioEndpointVolume * master = NULL;
 	std::vector<AudioSession> sessions;
 
-	// constructors
+	// Constructors
 	SoundComponent(Server * s);
 	SoundComponent(LPCGUID lpcguid);
 
-	// MEthods
+	// Methods
 	float getMasterVol();
 	float getMasterVolScalar();
 
 	float setMasterVol(float vol);
 
 	BOOL getMasterMuted();
+	BOOL setMasterMuted(BOOL muted);
+
+	void updateEntrys();
 
 	AudioSession* getAudioSession(int pid);
-
-	void setLPCGUID(LPCGUID);
 
 };

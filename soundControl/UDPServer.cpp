@@ -20,6 +20,8 @@ Silver Moon ( m00n.silv3r@gmail.com )
 
 #include "soundComponent.h"
 
+#include <ctime>
+
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
 
 #define BUFLEN 2000  //Max length of buffer
@@ -36,7 +38,10 @@ SOCKET socket_;
 
 
 void sendReply(SoundComponent& soundComponent ){
-	printf("sending status");
+
+	soundComponent.updateEntrys();
+
+	printf("sending status\n");
 	char retbuf[1000];
 	DWORD pid = SPEAKER_PID;
 	memcpy_s(&retbuf[0], 6, "Status", 6);
@@ -54,9 +59,11 @@ void sendReply(SoundComponent& soundComponent ){
 
 	if (sendto(socket_, retbuf, 18 + length + 1, 0, (struct sockaddr*) &si_other, slen) == SOCKET_ERROR)
 	{
-		printf("sendto() failed with error code : %d", WSAGetLastError());
+		printf("sendto() failed with error code : %d\n", WSAGetLastError());
 		exit(EXIT_FAILURE);
 	}
+	//delete name; // is this right?
+	
 	for (auto& s : soundComponent.sessions){
 		char retbuf[1000];
 		DWORD pid = s.pid;
@@ -76,7 +83,7 @@ void sendReply(SoundComponent& soundComponent ){
 
 		if (sendto(socket_, retbuf, 18 + length + 1, 0, (struct sockaddr*) &si_other, slen) == SOCKET_ERROR)
 		{
-			printf("sendto() failed with error code : %d", WSAGetLastError());
+			printf("sendto() failed with error code : %d\n", WSAGetLastError());
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -85,7 +92,7 @@ void sendReply(SoundComponent& soundComponent ){
 
 void processData(SoundComponent& soundComponent, char* buf, int recv_len, LPCGUID guid){
 	if (strncmp(buf, "Hello", 5)==0){
-		printf("message hello");
+		printf("message hello\n");
 
 		
 		sendReply(soundComponent);
@@ -95,9 +102,7 @@ void processData(SoundComponent& soundComponent, char* buf, int recv_len, LPCGUI
 		int pid = 0;
 		memcpy_s(&pid, 4, (buf + 6), 4);
 		pid = ntohl(pid);
-		int vol = 0;
-		memcpy_s(&vol, 4, (buf + 10), 4);
-		vol = ntohl(vol);
+		
 
 		uint8_t muted;
 		memcpy_s(&muted, 1, (buf + 14), 1);
@@ -105,9 +110,19 @@ void processData(SoundComponent& soundComponent, char* buf, int recv_len, LPCGUI
 		//memcpy_s(&nameLength, 4, (buf + 13), 4);
 		//WCHAR name[260]; // max length for a name
 		//memcpy_s(&nameLength, 260, (buf + 17), nameLength);
-
+int vol = 0;
+			memcpy_s(&vol, 4, (buf + 10), 4);
+			vol = ntohl(vol);
 		if (pid == SPEAKER_PID){
-			soundComponent.setMasterVol(static_cast<float>(-vol));
+			/*int v = 0;
+			memcpy_s(&v, 4, (buf + 10), 4);
+			v = ntohl(v);
+
+			float vol = 0;
+			memcpy_s(&vol, 4, &v, 4);*/
+
+			soundComponent.setMasterVol(static_cast<float>(vol) / 100);
+			soundComponent.setMasterMuted(muted);
 		}
 		else{
 			
@@ -130,7 +145,7 @@ void processData(SoundComponent& soundComponent, char* buf, int recv_len, LPCGUI
 			}
 		}
 	}
-	memcpy(buf, "Stop", 3);
+	//memcpy(buf, "Stop", 3);
 	//now reply the client with the same data
 
 }
@@ -139,19 +154,26 @@ void processData(SoundComponent& soundComponent, char* buf, int recv_len, LPCGUI
 int main()
 {
 	
+	/*std::time_t currentTime = std::time(nullptr);
+
+	if (currentTime > )*/
+
+
 	GUID guid;
 	HRESULT h = CoCreateGuid(&guid);
 	if (h != S_OK){
-		printf("dramas guid not created.");
+		printf("dramas - guid not created.");
 	}
 	else {
-		printf("guid is: %d", guid);
+		printf("Guid = {%08lX-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX}",
+			guid.Data1, guid.Data2, guid.Data3,
+			guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
+			guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+
 	}
 	LPCGUID lpcguid = static_cast<LPCGUID>(&guid);
 
 	SoundComponent soundComponent(lpcguid);
-
-	//soundComponent.setLPCGUID(lpcguid);
 
 	SOCKET s;
 	struct sockaddr_in server;
